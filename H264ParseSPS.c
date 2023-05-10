@@ -2,6 +2,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
+#include "bs.h"
+#include "media_util.h"
 
 typedef unsigned char BYTE;
 typedef int INT;
@@ -13,26 +15,6 @@ typedef struct
 	UINT size;          //sps数据大小
 	UINT index;         //当前计算位所在的位置标记
 } sps_bit_stream;
-
-/**
- 移除H264的NAL防竞争码(0x03)
- @param data sps数据
- @param dataSize sps数据大小
- */
-static void del_emulation_prevention(BYTE *data, UINT *dataSize)
-{
-	UINT dataSizeTemp = *dataSize;
-	for (UINT i = 0, j = 0; i < (dataSizeTemp - 2); i++) {
-		int val = (data[i] ^ 0x0) + (data[i + 1] ^ 0x0) + (data[i + 2] ^ 0x3);    //检测是否是竞争码
-		if (val == 0) {
-			for (j = i + 2; j < dataSizeTemp - 1; j++) {    //移除竞争码
-				data[j] = data[j + 1];
-			}
-
-			(*dataSize)--;      //data size 减1
-		}
-	}
-}
 
 static void sps_bs_init(sps_bit_stream *bs, const BYTE *data, UINT size)
 {
@@ -203,8 +185,8 @@ INT h264_parse_sps(const BYTE *data, UINT dataSize, sps_info_struct *info)
 	INT ret = 0;
 
 	BYTE *dataBuf = malloc(dataSize);
-	memcpy(dataBuf, data, dataSize);
-	del_emulation_prevention(dataBuf, &dataSize);
+
+	remove_emulation_bytes(dataBuf, dataSize, data, dataSize);
 
 	sps_bit_stream bs = { 0 };
 	sps_bs_init(&bs, dataBuf, dataSize);
