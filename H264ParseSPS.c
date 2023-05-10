@@ -1,22 +1,17 @@
 #include "H264ParseSPS.h"
-#include <string.h>
 #include <stdlib.h>
 #include <math.h>
-#include "bs.h"
 #include "media_util.h"
 
-typedef unsigned char BYTE;
-typedef int INT;
-typedef unsigned int UINT;
 
 typedef struct
 {
-	const BYTE *data;   //sps数据
-	UINT size;          //sps数据大小
-	UINT index;         //当前计算位所在的位置标记
+	const uint8_t *data;   //sps数据
+	uint32_t size;          //sps数据大小
+	uint32_t index;         //当前计算位所在的位置标记
 } sps_bit_stream;
 
-static void sps_bs_init(sps_bit_stream *bs, const BYTE *data, UINT size)
+static void sps_bs_init(sps_bit_stream *bs, const uint8_t *data, uint32_t size)
 {
 	if (bs) {
 		bs->data = data;
@@ -31,7 +26,7 @@ static void sps_bs_init(sps_bit_stream *bs, const BYTE *data, UINT size)
  @param bs sps_bit_stream数据
  @return 1：yes，0：no
  */
-static INT eof(sps_bit_stream *bs)
+static int32_t eof(sps_bit_stream *bs)
 {
 	return (bs->index >= bs->size * 8);    //位偏移已经超出数据
 }
@@ -43,10 +38,10 @@ static INT eof(sps_bit_stream *bs)
  @param bitCount bit位个数(从低到高)
  @return value
  */
-static UINT u(sps_bit_stream *bs, BYTE bitCount)
+static uint32_t u(sps_bit_stream *bs, uint8_t bitCount)
 {
-	UINT val = 0;
-	for (BYTE i = 0; i < bitCount; i++) {
+	uint32_t val = 0;
+	for (uint8_t i = 0; i < bitCount; i++) {
 		val <<= 1;
 		if (eof(bs)) {
 			val = 0;
@@ -67,14 +62,14 @@ static UINT u(sps_bit_stream *bs, BYTE bitCount)
  @param bs sps_bit_stream数据
  @return value
  */
-static UINT ue(sps_bit_stream *bs)
+static uint32_t ue(sps_bit_stream *bs)
 {
-	UINT zeroNum = 0;
+	uint32_t zeroNum = 0;
 	while (u(bs, 1) == 0 && !eof(bs) && zeroNum < 32) {
 		zeroNum++;
 	}
 
-	return (UINT)((1 << zeroNum) - 1 + u(bs, zeroNum));
+	return (uint32_t)((1 << zeroNum) - 1 + u(bs, zeroNum));
 }
 
 /**
@@ -84,12 +79,12 @@ static UINT ue(sps_bit_stream *bs)
  @param bs sps_bit_stream数据
  @return value
  */
-INT se(sps_bit_stream *bs)
+int32_t se(sps_bit_stream *bs)
 {
-	INT ueVal = (INT)ue(bs);
+	int32_t ueVal = (int32_t)ue(bs);
 	double k = ueVal;
 
-	INT seVal = (INT)ceil(k / 2);     //ceil:返回大于或者等于指定表达式的最小整数
+	int32_t seVal = (int32_t)ceil(k / 2);     //ceil:返回大于或者等于指定表达式的最小整数
 	if (ueVal % 2 == 0) {       //偶数取反，即(-1)^(k+1)
 		seVal = -seVal;
 	}
@@ -105,25 +100,25 @@ INT se(sps_bit_stream *bs)
  */
 void vui_para_parse(sps_bit_stream *bs, sps_info_struct *info)
 {
-	UINT aspect_ratio_info_present_flag = u(bs, 1);
+	uint32_t aspect_ratio_info_present_flag = u(bs, 1);
 	if (aspect_ratio_info_present_flag) {
-		UINT aspect_ratio_idc = u(bs, 8);
+		uint32_t aspect_ratio_idc = u(bs, 8);
 		if (aspect_ratio_idc == 255) {      //Extended_SAR
 			u(bs, 16);      //sar_width
 			u(bs, 16);      //sar_height
 		}
 	}
 
-	UINT overscan_info_present_flag = u(bs, 1);
+	uint32_t overscan_info_present_flag = u(bs, 1);
 	if (overscan_info_present_flag) {
 		u(bs, 1);       //overscan_appropriate_flag
 	}
 
-	UINT video_signal_type_present_flag = u(bs, 1);
+	uint32_t video_signal_type_present_flag = u(bs, 1);
 	if (video_signal_type_present_flag) {
 		u(bs, 3);       //video_format
 		u(bs, 1);       //video_full_range_flag
-		UINT colour_description_present_flag = u(bs, 1);
+		uint32_t colour_description_present_flag = u(bs, 1);
 		if (colour_description_present_flag) {
 			u(bs, 8);       //colour_primaries
 			u(bs, 8);       //transfer_characteristics
@@ -131,31 +126,31 @@ void vui_para_parse(sps_bit_stream *bs, sps_info_struct *info)
 		}
 	}
 
-	UINT chroma_loc_info_present_flag = u(bs, 1);
+	uint32_t chroma_loc_info_present_flag = u(bs, 1);
 	if (chroma_loc_info_present_flag) {
 		ue(bs);     //chroma_sample_loc_type_top_field
 		ue(bs);     //chroma_sample_loc_type_bottom_field
 	}
 
-	UINT timing_info_present_flag = u(bs, 1);
+	uint32_t timing_info_present_flag = u(bs, 1);
 	if (timing_info_present_flag) {
-		UINT num_units_in_tick = u(bs, 32);
-		UINT time_scale = u(bs, 32);
-		UINT fixed_frame_rate_flag = u(bs, 1);
+		uint32_t num_units_in_tick = u(bs, 32);
+		uint32_t time_scale = u(bs, 32);
+		uint32_t fixed_frame_rate_flag = u(bs, 1);
 
-		info->fps = (UINT)((float)time_scale / (float)num_units_in_tick);
+		info->fps = (uint32_t)((float)time_scale / (float)num_units_in_tick);
 		if (fixed_frame_rate_flag) {
 			info->fps = info->fps / 2;
 		}
 	}
 
-	UINT nal_hrd_parameters_present_flag = u(bs, 1);
+	uint32_t nal_hrd_parameters_present_flag = u(bs, 1);
 	if (nal_hrd_parameters_present_flag) {
 		//hrd_parameters()  //see E.1.2 HRD parameters syntax
 	}
 
 	//后面代码需要hrd_parameters()函数接口实现才有用
-	UINT vcl_hrd_parameters_present_flag = u(bs, 1);
+	uint32_t vcl_hrd_parameters_present_flag = u(bs, 1);
 	if (vcl_hrd_parameters_present_flag) {
 		//hrd_parameters()
 	}
@@ -164,10 +159,10 @@ void vui_para_parse(sps_bit_stream *bs, sps_info_struct *info)
 	}
 
 	u(bs, 1);       //pic_struct_present_flag
-	UINT bitstream_restriction_flag = u(bs, 1);
+	uint32_t bitstream_restriction_flag = u(bs, 1);
 	if (bitstream_restriction_flag) {
 		u(bs, 1);   //motion_vectors_over_pic_boundaries_flag
-		ue(bs);     //max_bytes_per_pic_denom
+		ue(bs);     //max_uint8s_per_pic_denom
 		ue(bs);     //max_bits_per_mb_denom
 		ue(bs);     //log2_max_mv_length_horizontal
 		ue(bs);     //log2_max_mv_length_vertical
@@ -179,12 +174,12 @@ void vui_para_parse(sps_bit_stream *bs, sps_info_struct *info)
 //See FFmpeg h264_ps.c ff_h264_decode_seq_parameter_set
 //See 7.3.1 NAL unit syntax
 //See 7.3.2.1.1 Sequence parameter set data syntax
-INT h264_parse_sps(const BYTE *data, UINT dataSize, sps_info_struct *info)
+int32_t h264_parse_sps(const uint8_t *data, uint32_t dataSize, sps_info_struct *info)
 {
 	if (!data || dataSize <= 0 || !info) return 0;
-	INT ret = 0;
+	int32_t ret = 0;
 
-	BYTE *dataBuf = malloc(dataSize);
+	uint8_t *dataBuf = malloc(dataSize);
 
 	remove_emulation_bytes(dataBuf, dataSize, data, dataSize);
 
@@ -193,7 +188,7 @@ INT h264_parse_sps(const BYTE *data, UINT dataSize, sps_info_struct *info)
 
 	u(&bs, 1);      //forbidden_zero_bit
 	u(&bs, 2);      //nal_ref_idc
-	UINT nal_unit_type = u(&bs, 5);
+	uint32_t nal_unit_type = u(&bs, 5);
 
 	if (nal_unit_type == 0x7) {     //Nal SPS Flag
 		info->profile_idc = u(&bs, 8);
@@ -208,7 +203,7 @@ INT h264_parse_sps(const BYTE *data, UINT dataSize, sps_info_struct *info)
 
 		ue(&bs);    //seq_parameter_set_id
 
-		UINT chroma_format_idc = 1;
+		uint32_t chroma_format_idc = 1;
 		if (info->profile_idc == 100 || info->profile_idc == 110 || info->profile_idc == 122 ||
 			info->profile_idc == 244 || info->profile_idc == 44 || info->profile_idc == 83 ||
 			info->profile_idc == 86 || info->profile_idc == 118 || info->profile_idc == 128 ||
@@ -221,10 +216,10 @@ INT h264_parse_sps(const BYTE *data, UINT dataSize, sps_info_struct *info)
 			ue(&bs);        //bit_depth_luma_minus8
 			ue(&bs);        //bit_depth_chroma_minus8
 			u(&bs, 1);      //qpprime_y_zero_transform_bypass_flag
-			UINT seq_scaling_matrix_present_flag = u(&bs, 1);
+			uint32_t seq_scaling_matrix_present_flag = u(&bs, 1);
 			if (seq_scaling_matrix_present_flag) {
-				UINT seq_scaling_list_present_flag[8] = { 0 };
-				for (INT i = 0; i < ((chroma_format_idc != 3) ? 8 : 12); i++) {
+				uint32_t seq_scaling_list_present_flag[8] = { 0 };
+				for (int32_t i = 0; i < ((chroma_format_idc != 3) ? 8 : 12); i++) {
 					seq_scaling_list_present_flag[i] = u(&bs, 1);
 					if (seq_scaling_list_present_flag[i]) {
 						if (i < 6) {    //scaling_list(ScalingList4x4[i], 16, UseDefaultScalingMatrix4x4Flag[i])
@@ -236,7 +231,7 @@ INT h264_parse_sps(const BYTE *data, UINT dataSize, sps_info_struct *info)
 		}
 
 		ue(&bs);        //log2_max_frame_num_minus4
-		UINT pic_order_cnt_type = ue(&bs);
+		uint32_t pic_order_cnt_type = ue(&bs);
 		if (pic_order_cnt_type == 0) {
 			ue(&bs);        //log2_max_pic_order_cnt_lsb_minus4
 		}
@@ -245,9 +240,9 @@ INT h264_parse_sps(const BYTE *data, UINT dataSize, sps_info_struct *info)
 			se(&bs);        //offset_for_non_ref_pic
 			se(&bs);        //offset_for_top_to_bottom_field
 
-			UINT num_ref_frames_in_pic_order_cnt_cycle = ue(&bs);
-			INT *offset_for_ref_frame = (INT *)malloc((UINT)num_ref_frames_in_pic_order_cnt_cycle * sizeof(INT));
-			for (INT i = 0; i < num_ref_frames_in_pic_order_cnt_cycle; i++) {
+			uint32_t num_ref_frames_in_pic_order_cnt_cycle = ue(&bs);
+			int32_t *offset_for_ref_frame = (int32_t *)malloc((uint32_t)num_ref_frames_in_pic_order_cnt_cycle * sizeof(int32_t));
+			for (uint32_t i = 0; i < num_ref_frames_in_pic_order_cnt_cycle; i++) {
 				offset_for_ref_frame[i] = se(&bs);
 			}
 			free(offset_for_ref_frame);
@@ -256,28 +251,28 @@ INT h264_parse_sps(const BYTE *data, UINT dataSize, sps_info_struct *info)
 		ue(&bs);      //max_num_ref_frames
 		u(&bs, 1);      //gaps_in_frame_num_value_allowed_flag
 
-		UINT pic_width_in_mbs_minus1 = ue(&bs);
-		UINT pic_height_in_map_units_minus1 = ue(&bs);      //47
-		UINT frame_mbs_only_flag = u(&bs, 1);
+		uint32_t pic_width_in_mbs_minus1 = ue(&bs);
+		uint32_t pic_height_in_map_units_minus1 = ue(&bs);      //47
+		uint32_t frame_mbs_only_flag = u(&bs, 1);
 
-		info->width = (INT)(pic_width_in_mbs_minus1 + 1) * 16;
-		info->height = (INT)(2 - frame_mbs_only_flag) * (pic_height_in_map_units_minus1 + 1) * 16;
+		info->width = (int32_t)(pic_width_in_mbs_minus1 + 1) * 16;
+		info->height = (int32_t)(2 - frame_mbs_only_flag) * (pic_height_in_map_units_minus1 + 1) * 16;
 
 		if (!frame_mbs_only_flag) {
 			u(&bs, 1);      //mb_adaptive_frame_field_flag
 		}
 
 		u(&bs, 1);     //direct_8x8_inference_flag
-		UINT frame_cropping_flag = u(&bs, 1);
+		uint32_t frame_cropping_flag = u(&bs, 1);
 		if (frame_cropping_flag) {
-			UINT frame_crop_left_offset = ue(&bs);
-			UINT frame_crop_right_offset = ue(&bs);
-			UINT frame_crop_top_offset = ue(&bs);
-			UINT frame_crop_bottom_offset = ue(&bs);
+			uint32_t frame_crop_left_offset = ue(&bs);
+			uint32_t frame_crop_right_offset = ue(&bs);
+			uint32_t frame_crop_top_offset = ue(&bs);
+			uint32_t frame_crop_bottom_offset = ue(&bs);
 
 			//See 6.2 Source, decoded, and output picture formats
-			INT crop_unit_x = 1;
-			INT crop_unit_y = 2 - frame_mbs_only_flag;      //monochrome or 4:4:4
+			int32_t crop_unit_x = 1;
+			int32_t crop_unit_y = 2 - frame_mbs_only_flag;      //monochrome or 4:4:4
 			if (chroma_format_idc == 1) {   //4:2:0
 				crop_unit_x = 2;
 				crop_unit_y = 2 * (2 - frame_mbs_only_flag);
@@ -302,7 +297,7 @@ INT h264_parse_sps(const BYTE *data, UINT dataSize, sps_info_struct *info)
 			info->height -= crop_unit_y * (frame_crop_top_offset + frame_crop_bottom_offset);
 		}
 
-		UINT vui_parameters_present_flag = u(&bs, 1);
+		uint32_t vui_parameters_present_flag = u(&bs, 1);
 		if (vui_parameters_present_flag) {
 			vui_para_parse(&bs, info);
 		}

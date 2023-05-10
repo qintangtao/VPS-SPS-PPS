@@ -1,6 +1,7 @@
 #ifndef H264ParseSPS_H
 #define H264ParseSPS_H
 
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -8,11 +9,11 @@ extern "C" {
 
 	typedef struct
 	{
-		unsigned int profile_idc;
-		unsigned int level_idc;
-		unsigned int width;
-		unsigned int height;
-		unsigned int fps;       //SPS中可能不包含FPS信息
+		uint32_t profile_idc;
+		uint32_t level_idc;
+		uint32_t width;
+		uint32_t height;
+		uint32_t fps;       //SPS中可能不包含FPS信息
 	} sps_info_struct;
 
 
@@ -25,7 +26,7 @@ extern "C" {
 	 @return success:1，fail:0
 
 	 */
-	int h264_parse_sps(const unsigned char *data, unsigned int dataSize, sps_info_struct *info);
+	int h264_parse_sps(const uint8_t *data, uint32_t dataSize, sps_info_struct *info);
 
 
 #ifdef __cplusplus
