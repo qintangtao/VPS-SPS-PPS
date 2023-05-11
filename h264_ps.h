@@ -2,6 +2,7 @@
 #define H264_PS_H
 
 #include <stdint.h>
+#include "h2645_vui.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,32 +48,6 @@ extern "C" {
 #define ERROR_PATCHWELCOME       PSERRTAG( 'P','A','W','E') ///< Not yet implemented in FFmpeg, patches welcome
 #define ERROR_PROTOCOL_NOT_FOUND PSERRTAG(0xF8,'P','R','O') ///< Protocol not found
 #define ERROR_STREAM_NOT_FOUND   PSERRTAG(0xF8,'S','T','R') ///< Stream not found
-
-
-	typedef struct PSRational {
-		int num; ///< Numerator
-		int den; ///< Denominator
-	} PSRational;
-
-	typedef struct H2645VUI {
-		PSRational sar;
-
-		int overscan_info_present_flag;
-		int overscan_appropriate_flag;
-
-		int video_signal_type_present_flag;
-		int video_format;
-		int video_full_range_flag;
-		int colour_description_present_flag;
-		int colour_primaries;
-		int transfer_characteristics;
-		int matrix_coeffs;
-
-		int chroma_loc_info_present_flag;
-		int chroma_sample_loc_type_top_field;
-		int chroma_sample_loc_type_bottom_field;
-		int chroma_location;
-	} H2645VUI;
 
 	/**
 	 * Sequence parameter set
