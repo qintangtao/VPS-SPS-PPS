@@ -9,46 +9,44 @@ extern "C" {
 
 #define QP_MAX_NUM (51 + 6*6)           // The maximum supported qp
 
-#define FF_PROFILE_H264_CONSTRAINED  (1<<9)  // 8+1; constraint_set1_flag
-#define FF_PROFILE_H264_INTRA        (1<<11) // 8+3; constraint_set3_flag
+#define PROFILE_H264_CONSTRAINED  (1<<9)  // 8+1; constraint_set1_flag
+#define PROFILE_H264_INTRA        (1<<11) // 8+3; constraint_set3_flag
 
-#define FF_PROFILE_H264_BASELINE             66
-#define FF_PROFILE_H264_CONSTRAINED_BASELINE (66|FF_PROFILE_H264_CONSTRAINED)
-#define FF_PROFILE_H264_MAIN                 77
-#define FF_PROFILE_H264_EXTENDED             88
-#define FF_PROFILE_H264_HIGH                 100
-#define FF_PROFILE_H264_HIGH_10              110
-#define FF_PROFILE_H264_HIGH_10_INTRA        (110|FF_PROFILE_H264_INTRA)
-#define FF_PROFILE_H264_MULTIVIEW_HIGH       118
-#define FF_PROFILE_H264_HIGH_422             122
-#define FF_PROFILE_H264_HIGH_422_INTRA       (122|FF_PROFILE_H264_INTRA)
-#define FF_PROFILE_H264_STEREO_HIGH          128
-#define FF_PROFILE_H264_HIGH_444             144
-#define FF_PROFILE_H264_HIGH_444_PREDICTIVE  244
-#define FF_PROFILE_H264_HIGH_444_INTRA       (244|FF_PROFILE_H264_INTRA)
-#define FF_PROFILE_H264_CAVLC_444            44
-
+#define PROFILE_H264_BASELINE             66
+#define PROFILE_H264_CONSTRAINED_BASELINE (66|PROFILE_H264_CONSTRAINED)
+#define PROFILE_H264_MAIN                 77
+#define PROFILE_H264_EXTENDED             88
+#define PROFILE_H264_HIGH                 100
+#define PROFILE_H264_HIGH_10              110
+#define PROFILE_H264_HIGH_10_INTRA        (110|PROFILE_H264_INTRA)
+#define PROFILE_H264_MULTIVIEW_HIGH       118
+#define PROFILE_H264_HIGH_422             122
+#define PROFILE_H264_HIGH_422_INTRA       (122|PROFILE_H264_INTRA)
+#define PROFILE_H264_STEREO_HIGH          128
+#define PROFILE_H264_HIGH_444             144
+#define PROFILE_H264_HIGH_444_PREDICTIVE  244
+#define PROFILE_H264_HIGH_444_INTRA       (244|PROFILE_H264_INTRA)
+#define PROFILE_H264_CAVLC_444            44
 
 #define PSMKTAG(a,b,c,d)   ((a) | ((b) << 8) | ((c) << 16) | ((unsigned)(d) << 24))
 #define PSERRTAG(a, b, c, d) (-(int)PSMKTAG(a, b, c, d))
 
-#define PSERROR_BSF_NOT_FOUND      PSERRTAG(0xF8,'B','S','F') ///< Bitstream filter not found
-#define PSERROR_BUG                PSERRTAG( 'B','U','G','!') ///< Internal bug, also see PSERROR_BUG2
-#define PSERROR_BUFFER_TOO_SMALL   PSERRTAG( 'B','U','F','S') ///< Buffer too small
-#define PSERROR_DECODER_NOT_FOUND  PSERRTAG(0xF8,'D','E','C') ///< Decoder not found
-#define PSERROR_DEMUXER_NOT_FOUND  PSERRTAG(0xF8,'D','E','M') ///< Demuxer not found
-#define PSERROR_ENCODER_NOT_FOUND  PSERRTAG(0xF8,'E','N','C') ///< Encoder not found
-#define PSERROR_EOF                PSERRTAG( 'E','O','F',' ') ///< End of file
-#define PSERROR_EXIT               PSERRTAG( 'E','X','I','T') ///< Immediate exit was requested; the called function should not be restarted
-#define PSERROR_EXTERNAL           PSERRTAG( 'E','X','T',' ') ///< Generic error in an external library
-#define PSERROR_FILTER_NOT_FOUND   PSERRTAG(0xF8,'F','I','L') ///< Filter not found
-#define PSERROR_INVALIDDATA        PSERRTAG( 'I','N','D','A') ///< Invalid data found when processing input
-#define PSERROR_MUXER_NOT_FOUND    PSERRTAG(0xF8,'M','U','X') ///< Muxer not found
-#define PSERROR_OPTION_NOT_FOUND   PSERRTAG(0xF8,'O','P','T') ///< Option not found
-#define PSERROR_PATCHWELCOME       PSERRTAG( 'P','A','W','E') ///< Not yet implemented in FFmpeg, patches welcome
-#define PSERROR_PROTOCOL_NOT_FOUND PSERRTAG(0xF8,'P','R','O') ///< Protocol not found
-
-#define PSERROR_STREAM_NOT_FOUND   PSERRTAG(0xF8,'S','T','R') ///< Stream not found
+#define ERROR_BSF_NOT_FOUND      PSERRTAG(0xF8,'B','S','F') ///< Bitstream filter not found
+#define ERROR_BUG                PSERRTAG( 'B','U','G','!') ///< Internal bug, also see ERROR_BUG2
+#define ERROR_BUFFER_TOO_SMALL   PSERRTAG( 'B','U','F','S') ///< Buffer too small
+#define ERROR_DECODER_NOT_FOUND  PSERRTAG(0xF8,'D','E','C') ///< Decoder not found
+#define ERROR_DEMUXER_NOT_FOUND  PSERRTAG(0xF8,'D','E','M') ///< Demuxer not found
+#define ERROR_ENCODER_NOT_FOUND  PSERRTAG(0xF8,'E','N','C') ///< Encoder not found
+#define ERROR_EOF                PSERRTAG( 'E','O','F',' ') ///< End of file
+#define ERROR_EXIT               PSERRTAG( 'E','X','I','T') ///< Immediate exit was requested; the called function should not be restarted
+#define ERROR_EXTERNAL           PSERRTAG( 'E','X','T',' ') ///< Generic error in an external library
+#define ERROR_FILTER_NOT_FOUND   PSERRTAG(0xF8,'F','I','L') ///< Filter not found
+#define ERROR_INVALIDDATA        PSERRTAG( 'I','N','D','A') ///< Invalid data found when processing input
+#define ERROR_MUXER_NOT_FOUND    PSERRTAG(0xF8,'M','U','X') ///< Muxer not found
+#define ERROR_OPTION_NOT_FOUND   PSERRTAG(0xF8,'O','P','T') ///< Option not found
+#define ERROR_PATCHWELCOME       PSERRTAG( 'P','A','W','E') ///< Not yet implemented in FFmpeg, patches welcome
+#define ERROR_PROTOCOL_NOT_FOUND PSERRTAG(0xF8,'P','R','O') ///< Protocol not found
+#define ERROR_STREAM_NOT_FOUND   PSERRTAG(0xF8,'S','T','R') ///< Stream not found
 
 
 	typedef struct PSRational {
@@ -139,6 +137,7 @@ extern "C" {
 	 * Picture parameter set
 	 */
 	typedef struct PPS {
+		unsigned int pps_id;
 		unsigned int sps_id;
 		int cabac;                  ///< entropy_coding_mode_flag
 		int pic_order_present;      ///< pic_order_present_flag
@@ -163,9 +162,6 @@ extern "C" {
 		uint32_t dequant8_buffer[6][QP_MAX_NUM + 1][64];
 		uint32_t(*dequant4_coeff[6])[16];
 		uint32_t(*dequant8_coeff[6])[64];
-
-		//AVBufferRef *sps_ref;
-		const SPS   *sps;
 	} PPS;
 
 
@@ -177,7 +173,7 @@ extern "C" {
 	/**
 	 * Decode PPS
 	 */
-	int h264_decode_pps(const uint8_t *data, uint32_t size, PPS *pps);
+	int h264_decode_pps(const uint8_t *data, uint32_t size, const SPS *sps, PPS *pps);
 
 	/**
 	 * compute profile from sps

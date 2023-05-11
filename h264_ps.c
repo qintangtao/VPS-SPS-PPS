@@ -79,6 +79,89 @@ static const PSRational ff_h2645_pixel_aspect[] = {
 	{   2,  1 },
 };
 
+static const uint8_t ff_h264_dequant4_coeff_init[6][3] = {
+	{ 10, 13, 16 },
+	{ 11, 14, 18 },
+	{ 13, 16, 20 },
+	{ 14, 18, 23 },
+	{ 16, 20, 25 },
+	{ 18, 23, 29 },
+};
+
+static const uint8_t ff_h264_dequant8_coeff_init_scan[16] = {
+	0, 3, 4, 3, 3, 1, 5, 1, 4, 5, 2, 5, 3, 1, 5, 1
+};
+
+static const uint8_t ff_h264_dequant8_coeff_init[6][6] = {
+	{ 20, 18, 32, 19, 25, 24 },
+	{ 22, 19, 35, 21, 28, 26 },
+	{ 26, 23, 42, 24, 33, 31 },
+	{ 28, 25, 45, 26, 35, 33 },
+	{ 32, 28, 51, 30, 40, 38 },
+	{ 36, 32, 58, 34, 46, 43 },
+};
+
+static const uint8_t ff_h264_quant_rem6[QP_MAX_NUM + 1] = {
+	0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5, 0, 1, 2,
+	3, 4, 5, 0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5,
+	0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5, 0, 1, 2,
+	3, 4, 5, 0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5,
+	0, 1, 2, 3,
+};
+
+static const uint8_t ff_h264_quant_div6[QP_MAX_NUM + 1] = {
+	0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 3,  3,  3,
+	3, 3, 3, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 6, 6, 6, 6,  6,  6,
+	7, 7, 7, 7, 7, 7, 8, 8, 8, 8, 8, 8, 9, 9, 9, 9, 9, 9, 10, 10, 10,
+   10,10,10,11,11,11,11,11,11,12,12,12,12,12,12,13,13,13, 13, 13, 13,
+   14,14,14,14,
+};
+
+#define QP(qP, depth) ((qP) + 6 * ((depth) - 8))
+
+#define CHROMA_QP_TABLE_END(d)                                          \
+    QP(0,  d), QP(1,  d), QP(2,  d), QP(3,  d), QP(4,  d), QP(5,  d),   \
+    QP(6,  d), QP(7,  d), QP(8,  d), QP(9,  d), QP(10, d), QP(11, d),   \
+    QP(12, d), QP(13, d), QP(14, d), QP(15, d), QP(16, d), QP(17, d),   \
+    QP(18, d), QP(19, d), QP(20, d), QP(21, d), QP(22, d), QP(23, d),   \
+    QP(24, d), QP(25, d), QP(26, d), QP(27, d), QP(28, d), QP(29, d),   \
+    QP(29, d), QP(30, d), QP(31, d), QP(32, d), QP(32, d), QP(33, d),   \
+    QP(34, d), QP(34, d), QP(35, d), QP(35, d), QP(36, d), QP(36, d),   \
+    QP(37, d), QP(37, d), QP(37, d), QP(38, d), QP(38, d), QP(38, d),   \
+    QP(39, d), QP(39, d), QP(39, d), QP(39, d)
+
+static const uint8_t ff_h264_chroma_qp[7][QP_MAX_NUM + 1] = {
+	{ CHROMA_QP_TABLE_END(8) },
+	{ 0, 1, 2, 3, 4, 5,
+	  CHROMA_QP_TABLE_END(9) },
+	{ 0, 1, 2, 3,  4,  5,
+	  6, 7, 8, 9, 10, 11,
+	  CHROMA_QP_TABLE_END(10) },
+	{ 0,  1, 2, 3,  4,  5,
+	  6,  7, 8, 9, 10, 11,
+	  12,13,14,15, 16, 17,
+	  CHROMA_QP_TABLE_END(11) },
+	{ 0,  1, 2, 3,  4,  5,
+	  6,  7, 8, 9, 10, 11,
+	  12,13,14,15, 16, 17,
+	  18,19,20,21, 22, 23,
+	  CHROMA_QP_TABLE_END(12) },
+	{ 0,  1, 2, 3,  4,  5,
+	  6,  7, 8, 9, 10, 11,
+	  12,13,14,15, 16, 17,
+	  18,19,20,21, 22, 23,
+	  24,25,26,27, 28, 29,
+	  CHROMA_QP_TABLE_END(13) },
+	{ 0,  1, 2, 3,  4,  5,
+	  6,  7, 8, 9, 10, 11,
+	  12,13,14,15, 16, 17,
+	  18,19,20,21, 22, 23,
+	  24,25,26,27, 28, 29,
+	  30,31,32,33, 34, 35,
+	  CHROMA_QP_TABLE_END(14) },
+};
+
+
 static inline void h2645_decode_common_vui_params(bs_t* s, H2645VUI *vui)
 {
 	int aspect_ratio_info_present_flag;
@@ -143,7 +226,7 @@ static inline int decode_hrd_parameters(bs_t* s, SPS *sps)
 
 	if (cpb_count > 32U) {
 		fprintf(stderr, "cpb_count %d invalid\n", cpb_count);
-		return PSERROR_INVALIDDATA;
+		return ERROR_INVALIDDATA;
 	}
 
 	bs_read_u(s, 4); /* bit_rate_scale */
@@ -191,11 +274,11 @@ static inline int decode_vui_parameters(bs_t* s, SPS *sps)
 	sps->nal_hrd_parameters_present_flag = bs_read_u1(s);
 	if (sps->nal_hrd_parameters_present_flag)
 		if (decode_hrd_parameters(s, sps) < 0)
-			return PSERROR_INVALIDDATA;
+			return ERROR_INVALIDDATA;
 	sps->vcl_hrd_parameters_present_flag = bs_read_u1(s);
 	if (sps->vcl_hrd_parameters_present_flag)
 		if (decode_hrd_parameters(s, sps) < 0)
-			return PSERROR_INVALIDDATA;
+			return ERROR_INVALIDDATA;
 	if (sps->nal_hrd_parameters_present_flag ||
 		sps->vcl_hrd_parameters_present_flag)
 		bs_read_u1(s);     /* low_delay_hrd_flag */
@@ -223,7 +306,7 @@ static inline int decode_vui_parameters(bs_t* s, SPS *sps)
 				"Clipping illegal num_reorder_frames %d\n",
 				sps->num_reorder_frames);
 			sps->num_reorder_frames = 16;
-			return PSERROR_INVALIDDATA;
+			return ERROR_INVALIDDATA;
 		}
 	}
 
@@ -294,6 +377,107 @@ static int decode_scaling_matrices(bs_t* s, const SPS *sps,
 	return ret;
 }
 
+static int av_clip(int a, int amin, int amax)
+{
+	if (a < amin) return amin;
+	else if (a > amax) return amax;
+	else               return a;
+}
+
+static void build_qp_table(PPS *pps, int t, int index, const int depth)
+{
+	int i;
+	const int max_qp = 51 + 6 * (depth - 8);
+	for (i = 0; i < max_qp + 1; i++)
+		pps->chroma_qp_table[t][i] =
+		ff_h264_chroma_qp[depth - 8][av_clip(i + index, 0, max_qp)];
+}
+
+static void init_dequant8_coeff_table(PPS *pps, const SPS *sps)
+{
+	int i, j, q, x;
+	const int max_qp = 51 + 6 * (sps->bit_depth_luma - 8);
+
+	for (i = 0; i < 6; i++) {
+		pps->dequant8_coeff[i] = pps->dequant8_buffer[i];
+		for (j = 0; j < i; j++)
+			if (!memcmp(pps->scaling_matrix8[j], pps->scaling_matrix8[i],
+				64 * sizeof(uint8_t))) {
+				pps->dequant8_coeff[i] = pps->dequant8_buffer[j];
+				break;
+			}
+		if (j < i)
+			continue;
+
+		for (q = 0; q < max_qp + 1; q++) {
+			int shift = ff_h264_quant_div6[q];
+			int idx = ff_h264_quant_rem6[q];
+			for (x = 0; x < 64; x++)
+				pps->dequant8_coeff[i][q][(x >> 3) | ((x & 7) << 3)] =
+				((uint32_t)ff_h264_dequant8_coeff_init[idx][ff_h264_dequant8_coeff_init_scan[((x >> 1) & 12) | (x & 3)]] *
+					pps->scaling_matrix8[i][x]) << shift;
+		}
+	}
+}
+
+static void init_dequant4_coeff_table(PPS *pps, const SPS *sps)
+{
+	int i, j, q, x;
+	const int max_qp = 51 + 6 * (sps->bit_depth_luma - 8);
+	for (i = 0; i < 6; i++) {
+		pps->dequant4_coeff[i] = pps->dequant4_buffer[i];
+		for (j = 0; j < i; j++)
+			if (!memcmp(pps->scaling_matrix4[j], pps->scaling_matrix4[i],
+				16 * sizeof(uint8_t))) {
+				pps->dequant4_coeff[i] = pps->dequant4_buffer[j];
+				break;
+			}
+		if (j < i)
+			continue;
+
+		for (q = 0; q < max_qp + 1; q++) {
+			int shift = ff_h264_quant_div6[q] + 2;
+			int idx = ff_h264_quant_rem6[q];
+			for (x = 0; x < 16; x++)
+				pps->dequant4_coeff[i][q][(x >> 2) | ((x << 2) & 0xF)] =
+				((uint32_t)ff_h264_dequant4_coeff_init[idx][(x & 1) + ((x >> 2) & 1)] *
+					pps->scaling_matrix4[i][x]) << shift;
+		}
+	}
+}
+
+static void init_dequant_tables(PPS *pps, const SPS *sps)
+{
+	int i, x;
+	init_dequant4_coeff_table(pps, sps);
+	memset(pps->dequant8_coeff, 0, sizeof(pps->dequant8_coeff));
+
+	if (pps->transform_8x8_mode)
+		init_dequant8_coeff_table(pps, sps);
+	if (sps->transform_bypass) {
+		for (i = 0; i < 6; i++)
+			for (x = 0; x < 16; x++)
+				pps->dequant4_coeff[i][0][x] = 1 << 6;
+		if (pps->transform_8x8_mode)
+			for (i = 0; i < 6; i++)
+				for (x = 0; x < 64; x++)
+					pps->dequant8_coeff[i][0][x] = 1 << 6;
+	}
+}
+
+static int more_rbsp_data_in_pps(const SPS *sps)
+{
+	int profile_idc = sps->profile_idc;
+
+	if ((profile_idc == 66 || profile_idc == 77 ||
+		profile_idc == 88) && (sps->constraint_set_flags & 7)) {
+		fprintf(stderr, "Current profile doesn't provide more RBSP data in PPS, skipping\n");
+		return 0;
+	}
+
+	return 1;
+}
+
 int h264_decode_sps(const uint8_t *data, uint32_t size, SPS *sps)
 {
 	bs_t* s = NULL;
@@ -322,7 +506,7 @@ int h264_decode_sps(const uint8_t *data, uint32_t size, SPS *sps)
 		goto fail;
 	}
 	
-	memset(sps, 0, sizeof(sps));
+	memset(sps, 0, sizeof(*sps));
 
 	sps->profile_idc = bs_read_u(s, 8);
 	sps->constraint_set_flags |= bs_read_u1(s) << 0;   // constraint_set0_flag
@@ -510,7 +694,7 @@ int h264_decode_sps(const uint8_t *data, uint32_t size, SPS *sps)
 
 	sps->vui_parameters_present_flag = bs_read_u1(s);
 	if (sps->vui_parameters_present_flag) {
-		int ret = decode_vui_parameters(s, sps);
+		ret = decode_vui_parameters(s, sps);
 		if (ret < 0)
 			goto fail;
 	}
@@ -527,9 +711,137 @@ fail:
 	return ret;
 }
 
-int h264_decode_pps(const uint8_t *data, uint32_t size, PPS *pps)
+int h264_decode_pps(const uint8_t *data, uint32_t size, const SPS *sps, PPS *pps)
 {
-	return 0;
+	bs_t* s = NULL;
+	uint8_t* web = NULL;
+	uint32_t webSize;
+	uint32_t nal_t;
+	int qp_bd_offset;
+	int bits_left;
+	int ret = -1;
+
+	web = malloc(size); // "WEB" means "Without Emulation Bytes"
+	if (!web)
+		goto fail;
+
+	webSize = remove_emulation_bytes(web, size, data, size);
+	if (webSize < 1)
+		goto fail;
+
+	s = bs_new(web, webSize);
+	if (!s)
+		goto fail;
+
+	bs_read_u1(s);
+	bs_read_u(s, 2);
+	nal_t = bs_read_u(s, 5);
+	if (0x08 != nal_t) {
+		fprintf(stderr, "nal type %u is not pps\n", nal_t);
+		goto fail;
+	}
+
+	memset(pps, 0, sizeof(*pps));
+
+	pps->pps_id = bs_read_ue(s);
+	if (pps->pps_id >= MAX_PPS_COUNT) {
+		fprintf(stderr, "pps_id %u out of range\n", pps->pps_id);
+		ret = ERROR_INVALIDDATA;
+		goto fail;
+	}
+
+	pps->sps_id = bs_read_ue(s);
+	if ((unsigned)pps->sps_id >= MAX_SPS_COUNT) {
+		fprintf(stderr, "sps_id %u out of range\n", pps->sps_id);
+		ret = ERROR_INVALIDDATA;
+		goto fail;
+	}
+
+	if (sps->bit_depth_luma > 14) {
+		fprintf(stderr, "Invalid luma bit depth=%d\n", sps->bit_depth_luma);
+		ret = ERROR_INVALIDDATA;
+		goto fail;
+	} else if (sps->bit_depth_luma == 11 || sps->bit_depth_luma == 13) {
+		fprintf(stderr, "report missing feature, Unimplemented luma bit depth=%d", sps->bit_depth_luma);
+		ret = ERROR_PATCHWELCOME;
+		goto fail;
+	}
+
+	pps->cabac = bs_read_u1(s);
+	pps->pic_order_present = bs_read_u1(s);
+	pps->slice_group_count = bs_read_ue(s) + 1;
+	if (pps->slice_group_count > 1) {
+		pps->mb_slice_group_map_type = bs_read_ue(s);
+		fprintf(stderr, "report missing feature %s\n", "FMO");
+		ret = ERROR_PATCHWELCOME;
+		goto fail;
+	}
+	pps->ref_count[0] = bs_read_ue(s) + 1;
+	pps->ref_count[1] = bs_read_ue(s) + 1;
+	if (pps->ref_count[0] - 1 > 32 - 1 || pps->ref_count[1] - 1 > 32 - 1) {
+		fprintf(stderr, "reference overflow (pps)\n");
+		ret = ERROR_INVALIDDATA;
+		goto fail;
+	}
+
+	qp_bd_offset = 6 * (sps->bit_depth_luma - 8);
+
+	pps->weighted_pred = bs_read_u1(s);
+	pps->weighted_bipred_idc = bs_read_u(s, 2);
+	pps->init_qp = bs_read_se(s) + 26U + qp_bd_offset;
+	pps->init_qs = bs_read_se(s) + 26U + qp_bd_offset;
+	pps->chroma_qp_index_offset[0] = bs_read_se(s);
+	if (pps->chroma_qp_index_offset[0] < -12 || pps->chroma_qp_index_offset[0] > 12) {
+		ret = ERROR_INVALIDDATA;
+		goto fail;
+	}
+
+	pps->deblocking_filter_parameters_present = bs_read_u1(s);
+	pps->constrained_intra_pred = bs_read_u1(s);
+	pps->redundant_pic_cnt_present = bs_read_u1(s);
+
+	pps->transform_8x8_mode = 0;
+	memcpy(pps->scaling_matrix4, sps->scaling_matrix4,
+		sizeof(pps->scaling_matrix4));
+	memcpy(pps->scaling_matrix8, sps->scaling_matrix8,
+		sizeof(pps->scaling_matrix8));
+
+	bits_left = size - bs_bits_count(s);
+	if (bits_left > 0 && more_rbsp_data_in_pps(sps)) {
+		pps->transform_8x8_mode = bs_read_u1(s);
+		ret = decode_scaling_matrices(s, sps, pps, 0, pps->scaling_matrix4, pps->scaling_matrix8);
+		if (ret < 0)
+			goto fail;
+		// second_chroma_qp_index_offset
+		pps->chroma_qp_index_offset[1] = bs_read_se(s);
+		if (pps->chroma_qp_index_offset[1] < -12 || pps->chroma_qp_index_offset[1] > 12) {
+			ret = ERROR_INVALIDDATA;
+			goto fail;
+		}
+	} else {
+		pps->chroma_qp_index_offset[1] = pps->chroma_qp_index_offset[0];
+	}
+
+	build_qp_table(pps, 0, pps->chroma_qp_index_offset[0],
+		sps->bit_depth_luma);
+	build_qp_table(pps, 1, pps->chroma_qp_index_offset[1],
+		sps->bit_depth_luma);
+
+	init_dequant_tables(pps, sps);
+
+	if (pps->chroma_qp_index_offset[0] != pps->chroma_qp_index_offset[1])
+		pps->chroma_qp_diff = 1;
+
+	ret = 0;
+
+fail:
+	if (s)
+		bs_free(s);
+
+	if (web)
+		free(web);
+
+	return ret;
 }
 
 /**
@@ -537,22 +849,22 @@ int h264_decode_pps(const uint8_t *data, uint32_t size, PPS *pps)
  *
  * @param sps SPS
  *
- * @return profile as defined by FF_PROFILE_H264_*
+ * @return profile as defined by PROFILE_H264_*
  */
 int h264_get_profile(const SPS *sps)
 {
 	int profile = sps->profile_idc;
 
 	switch (sps->profile_idc) {
-	case FF_PROFILE_H264_BASELINE:
+	case PROFILE_H264_BASELINE:
 		// constraint_set1_flag set to 1
-		profile |= (sps->constraint_set_flags & 1 << 1) ? FF_PROFILE_H264_CONSTRAINED : 0;
+		profile |= (sps->constraint_set_flags & 1 << 1) ? PROFILE_H264_CONSTRAINED : 0;
 		break;
-	case FF_PROFILE_H264_HIGH_10:
-	case FF_PROFILE_H264_HIGH_422:
-	case FF_PROFILE_H264_HIGH_444_PREDICTIVE:
+	case PROFILE_H264_HIGH_10:
+	case PROFILE_H264_HIGH_422:
+	case PROFILE_H264_HIGH_444_PREDICTIVE:
 		// constraint_set3_flag set to 1
-		profile |= (sps->constraint_set_flags & 1 << 3) ? FF_PROFILE_H264_INTRA : 0;
+		profile |= (sps->constraint_set_flags & 1 << 3) ? PROFILE_H264_INTRA : 0;
 		break;
 	}
 
@@ -587,10 +899,14 @@ int h264_get_height(const SPS *sps)
 int h264_get_framerate(const SPS *sps)
 {
 	int framerate = 0;
-	if (sps->timing_info_present_flag && sps->time_scale > 0 && sps->num_units_in_tick > 0) {
+	if (sps->timing_info_present_flag && sps->time_scale > 0 && sps->num_units_in_tick > 0) {		
+#if 1
+		framerate = (uint32_t)((float)sps->time_scale / (float)(2 *sps->num_units_in_tick));
+#else
 		framerate = (uint32_t)((float)sps->time_scale / (float)sps->num_units_in_tick);
 		if (sps->fixed_frame_rate_flag)
 			framerate = framerate / 2;
+#endif
 	}
 	return framerate;
 }
