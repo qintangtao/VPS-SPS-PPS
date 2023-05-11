@@ -12,6 +12,7 @@ bs_t* bs_new(uint8_t* buf, size_t size);
 void bs_free(bs_t* s);
 
 int bs_bits_left(bs_t *s);
+int bs_bits_count(bs_t *s);
 
 void bs_write_u(bs_t *s, int i_count, uint32_t i_bits);
 void bs_write_u1(bs_t *s, uint32_t i_bit);

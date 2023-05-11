@@ -30,8 +30,12 @@ void bs_free(bs_t* s)
 
 int bs_bits_left(bs_t *s)
 {
-	return (s->p_end - s->p);
-	//return gb->size_in_bits - get_bits_count(gb);
+	return (int)(s->p_end - s->p);
+}
+
+int bs_bits_count(bs_t *s)
+{
+	return (int)(s->p - s->p_start);
 }
 
 void bs_write_u(bs_t *s, int i_count, uint32_t i_bits)
