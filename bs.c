@@ -9,7 +9,7 @@ typedef struct bs_s
 	int     i_left;    /* i_count number of available bits */
 } bs_t;
 
-static inline void bs_init(bs_t *s, void *p_data, int i_data)
+static inline void bs_init(bs_t *s, void *p_data, size_t i_data)
 {
 	s->p = s->p_start = (uint8_t*)p_data;
 	s->p_end = (uint8_t*)p_data + i_data;
@@ -19,7 +19,8 @@ static inline void bs_init(bs_t *s, void *p_data, int i_data)
 bs_t* bs_new(uint8_t* buf, size_t size)
 {
 	bs_t* s = (bs_t*)malloc(sizeof(bs_t));
-	bs_init(s, buf, size);
+	if (s)
+		bs_init(s, buf, size);
 	return s;
 }
 void bs_free(bs_t* s)
@@ -27,6 +28,11 @@ void bs_free(bs_t* s)
 	free(s);
 }
 
+int bs_bits_left(bs_t *s)
+{
+	return (s->p_end - s->p);
+	//return gb->size_in_bits - get_bits_count(gb);
+}
 
 void bs_write_u(bs_t *s, int i_count, uint32_t i_bits)
 {
