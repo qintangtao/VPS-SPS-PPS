@@ -25,7 +25,7 @@ uint32_t remove_emulation_bytes(uint8_t* to, uint32_t toMaxSize, const uint8_t* 
 	uint32_t toSize = 0;
 	uint32_t i = 0;
 	
-	while (i < fromSize && toSize+1 < toMaxSize) 
+	while (i < fromSize && toSize < toMaxSize) 
 	{
 		if (i+2 < fromSize && from[i] == 0 && from[i+1] == 0 && from[i+2] == 3) 
 		{
