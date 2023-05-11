@@ -164,16 +164,20 @@ extern "C" {
 		uint32_t(*dequant8_coeff[6])[64];
 	} PPS;
 
+	/**
+	* split sps and pps
+	*/
+	int h264_get_sps_pps(uint8_t *data, int len, uint8_t *sps, int *sps_len, uint8_t *pps, int *pps_len);
 
 	/**
 	 * Decode SPS
 	 */
-	int h264_decode_sps(const uint8_t *data, uint32_t size, SPS *sps);
+	int h264_decode_sps(const uint8_t *data, const uint32_t len, SPS *sps);
 
 	/**
 	 * Decode PPS
 	 */
-	int h264_decode_pps(const uint8_t *data, uint32_t size, const SPS *sps, PPS *pps);
+	int h264_decode_pps(const uint8_t *data, const uint32_t len, const SPS *sps, PPS *pps);
 
 	/**
 	 * compute profile from sps

@@ -478,7 +478,7 @@ static int more_rbsp_data_in_pps(const SPS *sps)
 	return 1;
 }
 
-int h264_decode_sps(const uint8_t *data, uint32_t size, SPS *sps)
+int h264_decode_sps(const uint8_t *data, const uint32_t len, SPS *sps)
 {
 	bs_t* s = NULL;
 	uint8_t* web = NULL;
@@ -486,11 +486,11 @@ int h264_decode_sps(const uint8_t *data, uint32_t size, SPS *sps)
 	uint32_t nal_t;
 	int i; int ret = -1;
 
-	web = malloc(size); // "WEB" means "Without Emulation Bytes"
+	web = malloc(len); // "WEB" means "Without Emulation Bytes"
 	if (!web)
 		goto fail;
 
-	webSize = remove_emulation_bytes(web, size, data, size);
+	webSize = remove_emulation_bytes(web, len, data, len);
 	if (webSize < 1)
 		goto fail;
 
@@ -711,7 +711,7 @@ fail:
 	return ret;
 }
 
-int h264_decode_pps(const uint8_t *data, uint32_t size, const SPS *sps, PPS *pps)
+int h264_decode_pps(const uint8_t *data, const uint32_t len, const SPS *sps, PPS *pps)
 {
 	bs_t* s = NULL;
 	uint8_t* web = NULL;
@@ -721,11 +721,11 @@ int h264_decode_pps(const uint8_t *data, uint32_t size, const SPS *sps, PPS *pps
 	int bits_left;
 	int ret = -1;
 
-	web = malloc(size); // "WEB" means "Without Emulation Bytes"
+	web = malloc(len); // "WEB" means "Without Emulation Bytes"
 	if (!web)
 		goto fail;
 
-	webSize = remove_emulation_bytes(web, size, data, size);
+	webSize = remove_emulation_bytes(web, len, data, len);
 	if (webSize < 1)
 		goto fail;
 
@@ -806,7 +806,7 @@ int h264_decode_pps(const uint8_t *data, uint32_t size, const SPS *sps, PPS *pps
 	memcpy(pps->scaling_matrix8, sps->scaling_matrix8,
 		sizeof(pps->scaling_matrix8));
 
-	bits_left = size - bs_bits_count(s);
+	bits_left = len - bs_bits_count(s);
 	if (bits_left > 0 && more_rbsp_data_in_pps(sps)) {
 		pps->transform_8x8_mode = bs_read_u1(s);
 		ret = decode_scaling_matrices(s, sps, pps, 0, pps->scaling_matrix4, pps->scaling_matrix8);
@@ -909,4 +909,40 @@ int h264_get_framerate(const SPS *sps)
 #endif
 	}
 	return framerate;
+}
+
+
+int h264_get_sps_pps(uint8_t *data, int len, uint8_t *sps, int *sps_len, uint8_t *pps, int *pps_len)
+{
+	uint8_t nalu_t; int nalu_len;
+	uint8_t *r, *end = data + len;
+	*sps_len = 0; *pps_len = 0;
+
+	r = avc_find_startcode(data, end);
+
+	while (r < end)
+	{
+		uint8_t *r1;
+
+		while (!*(r++));
+		r1 = avc_find_startcode(r, end);
+		nalu_t = r[0] & 0x1F;
+		nalu_len = (int)(r1 - r);
+
+		if (nalu_t == 7) {
+			memcpy(sps, r, nalu_len);
+			*sps_len = nalu_len;
+		}
+		else if (nalu_t == 8) {
+			memcpy(pps, r, nalu_len);
+			*pps_len = nalu_len;
+		}
+
+		if ((*sps_len > 0 && *pps_len > 0))
+			break;
+
+		r = r1;
+	}
+
+	return (*sps_len > 0 && *pps_len > 0) ? 0 : -1;
 }
